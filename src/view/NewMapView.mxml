@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" title="新建地图" close="_close()"
+			   xmlns:s="library://ns.adobe.com/flex/spark" fontSize="14" fontFamily="微软雅黑"
+			   xmlns:mx="library://ns.adobe.com/flex/mx" >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import events.Msg;
+			
+			import model.Data;
+			import model.vo.MapDataVO;
+			
+			private var imgFile:File;
+			
+			private function _close():void{
+				this.visible = false;
+			}
+			
+			private function _openImg():void{
+				imgFile = new File();
+				imgFile = File.applicationDirectory;
+				imgFile.browseForOpen("导入底图", [new FileFilter("图片格式（*.jpg,*.png)", "*.jpg;*.png")]);
+				imgFile.addEventListener(Event.SELECT, selectBgFileHandler);
+			}
+			private function selectBgFileHandler(e:Event):void{
+				imgFile.removeEventListener(Event.SELECT,selectBgFileHandler);
+				
+				var dataFile:File = e.target as File;
+				mapBgPath.text = dataFile.url;
+//				dataFile.addEventListener(Event.COMPLETE,bgImageLoaded);
+//				dataFile.load();
+			}
+			//成功加载底图文件
+			private function bgImageLoaded(e:Event):void{
+				var dataFile:File = File(e.target);
+				mapBgPath.text = dataFile.url;
+			}
+			private function _newMap():void{
+				//Data.mapDataVO = new MapDataVO();
+				Data.mapDataVO.mapBgPath = mapBgPath.text;
+				Data.mapDataVO.mapName = mapName.text;
+				Data.mapDataVO.mapGridW = int(mapGripW.text);
+				Data.mapDataVO.mapGridH = int(mapGridH.text);
+				
+				dispatchEvent(new Msg(Msg.NEW_MAP));
+				_close();
+			}
+			private function _originHandler():void{
+				Data.leftBottomOriginFlag = originCheckBox.selected;
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Group left="10" right="10" top="10" bottom="10">
+		<s:HGroup x="0" y="0" verticalAlign="middle">
+			<s:Label text="地图名称:"/>
+			<s:TextInput id="mapName" width="100"/>
+			<s:Label text="网格宽度:"/>
+			<s:TextInput id="mapGripW" width="60" restrict="0-9" text="60"/>
+			<s:Label text="网格高度:"/>
+			<s:TextInput id="mapGridH" width="60" restrict="0-9" text="42"/>
+			<s:CheckBox label="左下角坐标系" id="originCheckBox" selected="true" click="_originHandler()"/>
+		</s:HGroup>
+		
+		<s:HGroup  x="0" y="33" width="100%" verticalAlign="middle">
+			<s:Label text="路径:"/>
+			<s:TextInput id="mapBgPath" width="100%"/>
+			<s:Button label="浏览" click="_openImg()"/>
+		</s:HGroup>
+		<s:Button right="0" y="66" label="确定" click="_newMap()"/>
+	</s:Group>
+</s:TitleWindow>

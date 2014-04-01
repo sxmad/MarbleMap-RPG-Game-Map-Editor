@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" fontSize="14" width="1400" height="800" showStatusBar="false"
+					   xmlns:s="library://ns.adobe.com/flex/spark" fontFamily="微软雅黑" backgroundColor="0x000000"
+					   xmlns:mx="library://ns.adobe.com/flex/mx" creationComplete="_init()" xmlns:view="view.*">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script source="MapEditorAs.as"/>
+	
+	<s:Group id="mapGroup" dragEnter="_onItemDragEnter(event)" dragDrop="_onItemDrop(event)" clipAndEnableScrolling="true">
+		<s:SpriteVisualElement id="bg"/>
+		<s:Group id="itemGroup" width="{Data.mapDataVO.mapW}" height="{Data.mapDataVO.mapH}"/>
+		<s:SpriteVisualElement id="gridContainer" visible="{showGridCheckBox.selected}"/>
+		<view:DivideGridView id="divideGridView" visible="{Data.dividePreViewFlag }"/>
+	</s:Group>
+	
+	<view:NewMapView id="newMapView" visible="false"/>
+	<view:DivideView id="divideView" visible="false"/>
+	<view:AddItemView id="addItemView" visible="false"/>
+	<view:AudioView id="audioView" visible="false"/>
+	
+	<s:TitleWindow id="controlPanelWindow" title="控制面板">
+		<s:HGroup top="10" bottom="10" left="10" right="10" verticalAlign="middle">
+			<s:Button label="新建" click="_newMap()"/>
+			<s:Button label="路径操作" click="_pathOp()"/>
+			<s:Button label="物品" click="_addItem()"/>
+			<s:Button label="声音" click="_audioOp()"/>
+			<s:Button label="切图" click="_divideMap()"/>
+		</s:HGroup>
+	</s:TitleWindow>
+	<s:TitleWindow id="pathWindow" title="路径操作面板" visible="false" close="_pathOp()">
+		<s:HGroup top="10" bottom="10" left="10" right="10" verticalAlign="middle">
+			<s:Button label="导入" click="_loadMap()"/>
+			<s:Button label="清除" click="_clearPath()"/>
+			<s:Button label="导出" click="_saveMap()"/>
+			
+			<!-- 分隔符 -->
+			<s:Line xFrom="0" xTo="0" y="0" yTo="20">
+				<s:stroke>
+					<s:SolidColorStroke color="0x000000" weight="2" caps="square"/>
+				</s:stroke>
+			</s:Line> 
+			
+			<s:CheckBox label="路径网格" id="showGridCheckBox" selected="false" click="_showGridHandler()"/>
+			<s:CheckBox label="路径标记" id="markPathCheckBox" selected="true" click="_markPathHandler()"/>
+			<s:CheckBox label="不可擦除" id="flagPathCheckBox" selected="true" enabled="{markPathCheckBox.selected}" 
+						click="_flagPathHandler()"/>
+			<s:CheckBox label="覆盖" id="overrideFlagCheckBox" selected="true" click="_overrideFlagHandler()"/>
+			
+			<!-- 分隔符 -->
+			<s:Line xFrom="0" xTo="0" y="0" yTo="20">
+				<s:stroke>
+					<s:SolidColorStroke color="0x000000" weight="2" caps="square"/>
+				</s:stroke>
+			</s:Line> 
+			<s:Label text="选择笔刷："/>
+			<s:ComboBox id="penConfigCbx" dataProvider="{penCmbDP}" width="60" skinClass="view.PenWeightComboBox"
+						change="_penConfigHandler(event)" labelField="penWeight"/>
+			
+			<!-- 分隔符 -->
+			<s:Line xFrom="0" xTo="0" y="0" yTo="20">
+				<s:stroke>
+					<s:SolidColorStroke color="0x000000" weight="2" caps="square"/>
+				</s:stroke>
+			</s:Line> 
+			
+			<s:Label text="标记类型："/>
+			<s:TextInput width="60" text="1" id="pathFlagTypeTxt" restrict="0-9"/>
+			<s:Button label="确定" click="_changePathFlag()"/>
+			
+		</s:HGroup>
+	</s:TitleWindow>
+</s:WindowedApplication>

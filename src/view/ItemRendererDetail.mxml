@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="true" mouseDown="_dragSource(event)">
+	<fx:Script>
+		<![CDATA[
+			import model.Data;
+			import model.vo.ItemDataVO;
+			
+			import mx.core.DragSource;
+			import mx.managers.DragManager;
+			
+			private function _dragSource(e:MouseEvent):void{
+				var ds:DragSource = new DragSource();
+				ds.addData(data,Data.ITEM_FORMAT);
+				DragManager.doDrag(this,ds,e);
+			}
+		]]>
+	</fx:Script>
+	
+	
+	<s:HGroup verticalAlign="middle" width="100%" height="50">
+		<s:Image id="img" source="{(data as ItemDataVO).itemFilePath}" width="50" height="50"
+				 smooth="true"/>
+		<s:Label text="{(data as ItemDataVO).itemFileName}"/>
+	</s:HGroup>
+	
+</s:ItemRenderer>

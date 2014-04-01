@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" width="360" height="720"
+			   title="添加物品" fontSize="14" fontFamily="微软雅黑" close="_close()"
+			   creationComplete="_init()">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import controller.utils.XTools;
+			
+			import events.Msg;
+			import events.RemoveItemEvent;
+			
+			import model.Data;
+			import model.vo.ItemDataVO;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.DragEvent;
+			
+			[Bindable]private var itemAc:ArrayCollection = new ArrayCollection();
+			
+			private function _init():void{
+				portalGroup.includeInLayout = false;
+				portalGroup.visible = false;
+				npcGroup.includeInLayout = false;
+				npcGroup.visible = false;
+			}
+			private function _close():void{
+				this.visible = false;
+			}
+			private function portalChkHandler():void{
+				Data.currentItemInMap.itemDataVO.isNpc = false;
+				Data.currentItemInMap.itemDataVO.isPortal = portalChk.selected;
+			}
+			private function npcChkHandler():void{
+				Data.currentItemInMap.itemDataVO.isPortal = false;
+				Data.currentItemInMap.itemDataVO.isNpc = npcChk.selected;
+			}
+			
+			private function _selectItemDir():void{
+				var dir:File = new File();
+				dir = File.applicationDirectory;
+				try
+				{
+					dir.browseForDirectory("选择物品目录");
+					dir.addEventListener(Event.SELECT, _selectedItemPath);
+				}catch (error:Error){
+					trace("操作失败:", error.message);
+				}
+			}
+			private function _selectedItemPath(e:Event):void{
+				itemAc.removeAll();
+				var dataFile:File = File(e.target);
+				var path:String = dataFile.url;
+				var fileArr:Array = dataFile.getDirectoryListing();
+				for each(var f:File in fileArr){
+					var itemDataVO:ItemDataVO = new ItemDataVO();
+					itemDataVO.itemFileName = f.name;
+					itemDataVO.itemFilePath = f.url;
+					
+					itemAc.addItem(itemDataVO);
+				}
+			}
+			/**
+			 * 修改当前所选择物品的层级 
+			 * @param type 所选择物品要进行的操作类型，如下：
+			 * type-1:上移
+			 * type-2:下移
+			 */
+			private function _changeLayerIndex(type:int):void{
+				dispatchEvent(new Msg(Msg.LAYER_EVENT,type));
+			}
+			private function _removeAllItems():void{
+				dispatchEvent(new RemoveItemEvent(RemoveItemEvent.REMOVE_ALL_ITEMS_EVENT));
+			}
+			private function removeChkClick():void{
+				Data.removeItemFlag = removeCheckBox.selected;
+			}
+			private function setItemVO():void{
+				if(Data.currentItemInMap == null){
+					Alert.show("没有要设置的对象",Data.INFO_TITLE);
+					return;
+				}
+				Data.currentItemInMap.itemDataVO.isPortal = portalChk.selected;
+				if(Data.currentItemInMap.itemDataVO.isPortal){
+					Data.currentItemInMap.itemDataVO.portalToMap = int(toMapTxt.text);
+					Data.currentItemInMap.itemDataVO.portalToPos = int(toPosTxt.text);
+				}
+				Data.currentItemInMap.itemDataVO.isNpc = npcChk.selected;
+				if(Data.currentItemInMap.itemDataVO.isNpc){
+					Data.currentItemInMap.itemDataVO.npcDirection = int(npcDirectionTxt.text);
+				}
+				Data.currentItemInMap.itemDataVO.itemType = int(itemTypeTxt.text);
+				Data.currentItemInMap.itemDataVO.itemSN = int(itemSNTxt.text);
+				Data.currentItemInMap.itemDataVO.itemPosX = int(itemPosXTxt.text);
+				Data.currentItemInMap.itemDataVO.itemPosY = int(itemPosYTxt.text);
+				Data.currentItemInMap.itemDataVO.itemRegPosX = Number(itemRegPosXTxt.text);
+				Data.currentItemInMap.itemDataVO.itemRegPosY = Number(itemRegPosYTxt.text);
+				var tempY:int;
+				if(Data.leftBottomOriginFlag){
+					tempY = Data.mapDataVO.mapH - Data.currentItemInMap.height - int(itemPosYTxt.text);
+				}else{
+					tempY = int(itemPosYTxt.text);
+				}
+				
+				Data.currentItemInMap.x = int(itemPosXTxt.text);
+				Data.currentItemInMap.y = tempY;
+				Data.currentItemInMap.regImg.x = 
+					XTools.getInstance().getItemRegPosX(
+						Data.currentItemInMap.width,
+						Data.currentItemInMap.regImg.width,
+						Data.currentItemInMap.itemDataVO.itemRegPosX);
+				
+				Data.currentItemInMap.regImg.y = 
+					XTools.getInstance().getItemRegPosY(
+						Data.currentItemInMap.height,
+						Data.currentItemInMap.regImg.height,
+						Data.currentItemInMap.itemDataVO.itemRegPosY,
+						Data.leftBottomOriginFlag);
+				
+				dispatchEvent(new Msg(Msg.SET_ITEM_EVENT));
+			}
+			
+			private function _exportItems():void{
+				if(Data.addedItemAc.length == 0){
+					Alert.show("没有物品数据可导出",Data.INFO_TITLE);
+					return;
+				}
+				
+				var itemDir:File = new File();
+				itemDir = File.applicationDirectory;
+				try
+				{
+					itemDir.browseForSave("保存地图信息");
+					itemDir.addEventListener(Event.SELECT, _saveData);
+				}catch (error:Error){
+					trace("操作失败:", error.message);
+				}
+			}
+			private function _saveData(event:Event):void 
+			{
+				var newFile:File = event.target as File;
+				var itemStr:String="";
+				itemStr += '{';
+				itemStr += '"'+'items'+'":[';
+				var len:int = Data.addedItemAc.length;
+				for(var i:int = 0;i<len;i++){
+					var vo:ItemDataVO = new ItemDataVO();
+					vo = (Data.addedItemAc.getItemAt(i) as ItemInMap).itemDataVO;
+					itemStr += '{';
+					//itemStr += '"'+'itemId'+'":'+vo.itemId+',';
+					if(vo.isPortal){
+						itemStr += '"'+'portalToMap'+'":'+vo.portalToMap+',';
+						itemStr += '"'+'portalToPos'+'":'+vo.portalToPos+',';
+					}
+					if(vo.isNpc){
+						itemStr += '"'+'npcDirection'+'":'+vo.npcDirection+',';
+					}
+					itemStr += '"'+'itemType'+'":'+vo.itemType+',';
+					itemStr += '"'+'itemSN'+'":'+vo.itemSN+',';
+					itemStr += '"'+'itemRegPosX'+'":'+vo.itemRegPosX+',';
+					itemStr += '"'+'itemRegPosY'+'":'+vo.itemRegPosY+',';
+					itemStr += '"'+'itemPosX'+'":'+vo.itemPosX+',';
+					itemStr += '"'+'itemPosY'+'":'+vo.itemPosY;
+					itemStr += '},';
+				}
+				itemStr = itemStr.substring(0,itemStr.length-1);
+				itemStr += ']}';
+				var stream:FileStream = new FileStream();
+				//write模式存在就替换
+				stream.open(newFile, FileMode.WRITE);
+				
+				stream.writeUTFBytes(itemStr);
+				stream.close();
+			}
+			
+			private function _importItems():void{
+				var fileToOpen:File = new File();
+				fileToOpen = File.applicationDirectory;
+				var txtFilter:FileFilter = new FileFilter("物品文件", "*.txt;*.json");
+				try 
+				{
+					fileToOpen.browseForOpen("Load ItemPath", [txtFilter]);
+					fileToOpen.addEventListener(Event.SELECT, _fileSelected);
+				}catch (error:Error){
+					trace("Failed:", error.message);
+				}
+			}
+			private function _fileSelected(event:Event):void 
+			{
+				_removeAllItems();
+				Data.importItemAc.removeAll();
+				var stream:FileStream = new FileStream();
+				var pathFile:File = event.target as File;
+				stream.open(pathFile, FileMode.READ);
+				var fileData:String = stream.readMultiByte(stream.bytesAvailable,"GBK");
+				var l_data:Object = com.adobe.serialization.json.JSON.decode(fileData);
+				var dataArr:Array = l_data.items as Array;
+				var len:int = dataArr.length;
+				for(var i:int = 0;i<len;i++){
+					var o:Object = dataArr[i];
+					var itemDataVO:ItemDataVO = new ItemDataVO();
+					itemDataVO.itemType = o.itemType;
+					itemDataVO.itemSN = o.itemSN;
+					itemDataVO.itemRegPosX = o.itemRegPosX;
+					itemDataVO.itemRegPosY = o.itemRegPosY;
+					itemDataVO.itemPosX = o.itemPosX;
+					itemDataVO.itemPosY = o.itemPosY;
+					//导入数据包含传送门信息
+					if(o.portalToMap){
+						itemDataVO.portalToMap = o.portalToMap;
+						itemDataVO.isPortal = true;
+					}
+					if(o.portalToPos){
+						itemDataVO.portalToPos = o.portalToPos;
+					}
+					if(o.npcDirection){
+						itemDataVO.isNpc = true;
+						itemDataVO.npcDirection = o.npcDirection;
+					}
+					Data.importItemAc.addItem(itemDataVO);
+				}
+				dispatchEvent(new Msg(Msg.IMPORT_ITEMS));
+			}
+		]]>
+	</fx:Script>
+	
+	<s:VGroup left="10" right="10" top="10" bottom="10">
+		<!-- 缩略图及所选物品信息 -->
+		<s:HGroup verticalAlign="middle">
+			<s:Group>
+				<s:HGroup width="120" height="120" verticalAlign="middle" horizontalAlign="center">
+					<s:Image source="{Data.currentItemInMap.itemDataVO.itemFilePath}" smooth="true" width="100%" height="100%"/>
+				</s:HGroup>
+			</s:Group>
+			<s:Group>
+				<s:VGroup>
+					<s:HGroup verticalAlign="middle">
+						<s:Label text="类型："/>
+						<s:TextInput id="itemTypeTxt" text="{Data.currentItemInMap.itemDataVO.itemType}" restrict="0-9" width="166"/>
+					</s:HGroup>
+					<s:HGroup verticalAlign="middle">
+						<s:Label text="编号："/>
+						<s:TextInput id="itemSNTxt" text="{Data.currentItemInMap.itemDataVO.itemSN}" restrict="0-9" width="166"/>
+					</s:HGroup>
+					<s:HGroup verticalAlign="middle">
+						<s:Label text="坐标："/>
+						<s:Label text="X"/>
+						<s:TextInput id="itemPosXTxt" text="{Data.currentItemInMap.itemDataVO.itemPosX}" restrict="0-9" width="65"/>
+						<s:Label text="Y"/>
+						<s:TextInput id="itemPosYTxt" text="{Data.currentItemInMap.itemDataVO.itemPosY}" restrict="0-9" width="65"/>
+					</s:HGroup>
+					<s:HGroup verticalAlign="middle">
+						<s:Label text="锚点："/>
+						<s:Label text="X"/>
+						<s:TextInput id="itemRegPosXTxt" text="{Data.currentItemInMap.itemDataVO.itemRegPosX}" restrict="0-9." width="65"/>
+						<s:Label text="Y"/>
+						<s:TextInput id="itemRegPosYTxt" text="{Data.currentItemInMap.itemDataVO.itemRegPosY}" restrict="0-9." width="65"/>
+					</s:HGroup>
+					
+				</s:VGroup>
+			</s:Group>
+		</s:HGroup>
+		<!-- 分隔符 -->
+		<s:Line xFrom="0" xTo="340" y="0" yTo="0">
+			<s:stroke>
+				<s:SolidColorStroke color="0x000000" weight="1" caps="square"/>
+			</s:stroke>
+		</s:Line> 
+		<s:VGroup id="portalGroup" includeInLayout="{Data.currentItemInMap.itemDataVO.isPortal}" visible="{Data.currentItemInMap.itemDataVO.isPortal}">
+			<s:Label text="请输入要传送到的目标地图编号，和对应的出生点编号:"/>
+			<s:HGroup verticalAlign="middle">
+				<s:Label text="目标地图："/>
+				<s:TextInput id="toMapTxt" width="84" restrict="0-9"
+							 text="{Data.currentItemInMap.itemDataVO.portalToMap}"/>
+				<s:Label text="出生点编号："/>
+				<s:TextInput id="toPosTxt" width="84" restrict="0-9"
+							 text="{Data.currentItemInMap.itemDataVO.portalToPos}"/>
+			</s:HGroup>
+			<!-- 分隔符 -->
+			<s:Line xFrom="0" xTo="340" y="0" yTo="0">
+				<s:stroke>
+					<s:SolidColorStroke color="0x000000" weight="1" caps="square"/>
+				</s:stroke>
+			</s:Line> 
+		</s:VGroup>
+		<s:VGroup id="npcGroup" includeInLayout="{Data.currentItemInMap.itemDataVO.isNpc}" visible="{Data.currentItemInMap.itemDataVO.isNpc}">
+			<s:HGroup verticalAlign="middle">
+				<s:Label text="请输入NPC方向："/>
+				<s:TextInput id="npcDirectionTxt" width="84" restrict="0-9"
+							 text="{Data.currentItemInMap.itemDataVO.npcDirection}"/>
+			</s:HGroup>
+			<!-- 分隔符 -->
+			<s:Line xFrom="0" xTo="340" y="0" yTo="0">
+				<s:stroke>
+					<s:SolidColorStroke color="0x000000" weight="1" caps="square"/>
+				</s:stroke>
+			</s:Line> 
+		</s:VGroup>
+		<s:HGroup width="100%" verticalAlign="middle" horizontalAlign="right">
+			<s:CheckBox id="npcChk" label="设为NPC" click="npcChkHandler()"
+						enabled="{Data.currentItemInMap != null}" selected="{Data.currentItemInMap.itemDataVO.isNpc}"/>
+			<s:CheckBox id="portalChk" label="设为传送门" click="portalChkHandler()"
+						enabled="{Data.currentItemInMap != null}" selected="{Data.currentItemInMap.itemDataVO.isPortal}"/>
+			<s:Image width="30" height="30" source="{Data.ITEM_UP_URL}" 
+					 smooth="true" buttonMode="true" click="_changeLayerIndex(Msg.LAYER_UP)"/>
+			<s:Image width="30" height="30" source="{Data.ITEM_DOWN_URL}" 
+					 smooth="true" buttonMode="true" click="_changeLayerIndex(Msg.LAYER_DOWN)"/>
+			<s:Button label="保存设置" click="setItemVO()"/>
+		</s:HGroup>
+		<!-- 分隔符 -->
+		<s:Line xFrom="0" xTo="340" y="0" yTo="0">
+			<s:stroke>
+				<s:SolidColorStroke color="0x000000" weight="1" caps="square"/>
+			</s:stroke>
+		</s:Line> 
+		<!-- 可选择添加物品列表 -->
+		<s:VGroup width="100%" height="100%">
+			<mx:HBox width="100%">
+				<s:Button label="物品图片目录" click="_selectItemDir()"/>
+				<s:Button label="导入" click="_importItems()" width="50"/>
+				<s:Button label="导出" click="_exportItems()" width="50"/>
+				<s:Button label="清空" click="_removeAllItems()" width="50"/>
+				<s:CheckBox label="删除" id="removeCheckBox" selected="false" click="removeChkClick()"/>
+			</mx:HBox>
+			<s:List width="100%" height="100%" dataProvider="{itemAc}" id="itemList" itemRenderer="view.ItemRendererDetail" >
+			</s:List>
+		</s:VGroup>
+	</s:VGroup>
+	
+</s:TitleWindow>

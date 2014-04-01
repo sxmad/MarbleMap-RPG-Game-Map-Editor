@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" click="_itemClick()"
+				autoDrawBackground="true" fontFamily="微软雅黑" fontSize="14">
+	<fx:Script>
+		<![CDATA[
+			import model.Data;
+			import model.vo.AudioDataVO;
+			private function _itemClick():void{
+//				trace((data as AudioDataVO).audioID);
+//				trace((data as AudioDataVO).removeFlag);
+				Data.currentAudioDataVO = data as AudioDataVO;
+			}
+			private function _removeChkClickHandler():void{
+				(data as AudioDataVO).removeFlag = removeChk.selected;
+			}
+		]]>
+	</fx:Script>
+	
+	<s:HGroup verticalAlign="middle">
+		<s:Label width="135" text="类型:{(data as AudioDataVO).audioType}"/>
+		<!-- 分隔符 -->
+		<s:Line xFrom="0" xTo="0" y="0" yTo="16">
+			<s:stroke>
+				<s:SolidColorStroke color="0x000000" weight="2" caps="square"/>
+			</s:stroke>
+		</s:Line> 
+		<s:Label width="135" text="编号:{(data as AudioDataVO).audioSN}"/>
+		<!-- 分隔符 -->
+		<s:Line xFrom="0" xTo="0" y="0" yTo="16">
+			<s:stroke>
+				<s:SolidColorStroke color="0x000000" weight="2" caps="square"/>
+			</s:stroke>
+		</s:Line> 
+		<s:CheckBox selected="{(data as AudioDataVO).removeFlag}" id="removeChk" click="_removeChkClickHandler()" />
+	</s:HGroup>
+	
+</s:ItemRenderer>

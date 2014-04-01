@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" width="{itemImg.width}" height="{itemImg.height}"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:view="view.*"
+		 >
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import events.Msg;
+			import events.RemoveItemEvent;
+			
+			import model.Data;
+			import model.vo.ItemDataVO;
+			[Bindable]public var itemDataVO:ItemDataVO;
+			[Bindable]public var layerIndex:int;
+			
+			public function setItemDataVO(vo:ItemDataVO):void{
+				itemDataVO = vo;
+			}
+			//测试用
+			private function _hitCheck():Boolean{
+				var pt1:Point = new Point(0,0);
+				var pt2:Point = new Point(itemImg.mouseX,itemImg.mouseY);
+				var result:Boolean = itemImg.bitmapData.hitTest(pt1,0,pt2);
+				return result;
+			}
+			private function _itemClick():void{
+				Data.currentItemInMap = this;
+				_setPos();
+				itemRadioButton.selected = true;
+			}
+			private function _downHandler():void{
+				this.startDrag();
+			}
+			private function _upHandler():void{
+				this.stopDrag();
+			}
+			private function _setPos():void{
+				var tempY:int;
+				var regY:Number;
+				if(Data.leftBottomOriginFlag){
+					tempY = Data.mapDataVO.mapH - this.height - this.y
+					regY = this.height - regImg.height/2 - regImg.y;
+				}else{
+					tempY = this.y;
+					regY = regImg.y - regImg.height/2;
+				}
+				Data.currentItemInMap.itemDataVO.itemPosX = this.x;
+				Data.currentItemInMap.itemDataVO.itemPosY= tempY;
+				
+				var regX:Number = Number(((regImg.x + regImg.width/2) / this.width ).toFixed(2));
+				regY = Number((regY / this.height).toFixed(2));
+				Data.currentItemInMap.itemDataVO.itemRegPosX = regX;
+				Data.currentItemInMap.itemDataVO.itemRegPosY= regY;
+				
+				var len:int = Data.addedItemAc.length;
+				for(var i:int=0;i<len;i++){
+					var vo:ItemDataVO = (Data.addedItemAc.getItemAt(i) as ItemInMap).itemDataVO;
+					if(vo.itemId == Data.currentItemInMap.itemDataVO.itemId){
+						(Data.addedItemAc.getItemAt(i) as ItemInMap).itemDataVO.itemPosX = Data.currentItemInMap.itemDataVO.itemPosX;
+						(Data.addedItemAc.getItemAt(i) as ItemInMap).itemDataVO.itemPosY = Data.currentItemInMap.itemDataVO.itemPosY;
+						(Data.addedItemAc.getItemAt(i) as ItemInMap).itemDataVO.itemRegPosX = Data.currentItemInMap.itemDataVO.itemRegPosX;
+						(Data.addedItemAc.getItemAt(i) as ItemInMap).itemDataVO.itemRegPosY = Data.currentItemInMap.itemDataVO.itemRegPosY;
+						break;
+					}
+				}
+//				trace("selected item position:" +this.x+" :: "+tempY);
+//				trace(itemDataVO.itemPosX + ":"+ itemDataVO.itemPosY);
+			}
+			private function _removeItemHandler():void{
+				Data.currentItemInMap = this;
+				dispatchEvent(new RemoveItemEvent(RemoveItemEvent.REMOVE_ITEM_EVENT));
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Image id="itemImg" source="{itemDataVO.itemFilePath}"
+			 click="_itemClick()" mouseUp="_upHandler()" mouseDown="_downHandler()"/>
+	<s:RadioButton id="itemRadioButton" skinClass="view.ItemRadioButton" group="{Data.itemRadioGroup}" 
+				   mouseChildren="false" mouseEnabled="false" selected="false"/>
+	<s:Image id="removeItemImg" source="{Data.ITEM_REMOVE_URL}" smooth="true"
+			 visible="{Data.removeItemFlag}" buttonMode="true" click="_removeItemHandler()"/>
+	<s:Image id="regImg" source="{Data.ITEM_REG_URL}" width="10" height="10" smooth="true" mouseChildren="false" mouseEnabled="false"/>
+</s:Group>

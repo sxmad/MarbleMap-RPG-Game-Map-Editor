@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" title="底图切块" fontFamily="微软雅黑" fontSize="14"
+		 xmlns:s="library://ns.adobe.com/flex/spark" close="_close()"
+		 xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import events.Msg;
+			
+			import model.Data;
+			
+			private function _close():void{
+				this.visible = false;
+			}
+			private function _setDivideBlock():void{
+				Data.divideBlockW = int(divideW.text);
+				Data.divideBlockH = int(divideH.text);
+				Data.divideBlockPreName = dividePreName.text;
+			}
+			private function _dividePreview():void{
+				Data.dividePreViewFlag = dividePreViewChk.selected;
+				_setDivideBlock();
+				this.dispatchEvent(new Msg(Msg.DIVIDE_PREVIEW));
+			}
+			
+			private function _divideHandler():void{
+				_setDivideBlock();
+				this.dispatchEvent(new Msg(Msg.DIVIDE_BLOCK));
+				_close();
+			}
+			
+			private function _dividePathHandler():void{
+				var mapsDir:File = new File();
+				mapsDir = File.applicationDirectory;
+				try
+				{
+					mapsDir.browseForDirectory("选择地图块存储目录");
+					mapsDir.addEventListener(Event.SELECT, _selectedDividePath);
+				}catch (error:Error){
+					trace("操作失败:", error.message);
+				}
+			}
+			private function _selectedDividePath(e:Event):void 
+			{
+				var dataFile:File = File(e.target);
+				var dividePath:String = dataFile.url;
+				Data.divideBlockPath = dividePath;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:Group left="10" top="10" right="10" bottom="10">
+		<s:HGroup verticalAlign="middle">
+			<s:Label text="切块前缀:"/>
+			<s:TextInput id="dividePreName" width="100"/>
+			<s:Label text="切块宽度:"/>
+			<s:TextInput id="divideW" width="60" restrict="0-9"/>
+			<s:Label text="切块高度:"/>
+			<s:TextInput id="divideH" width="60" restrict="0-9"/>
+			<s:CheckBox id="dividePreViewChk" label="预览" click="_dividePreview()"/>
+		</s:HGroup>
+		<s:HGroup y="33" width="100%" verticalAlign="middle">
+			<s:Label text="存储目录:"/>
+			<s:TextInput text="{Data.divideBlockPath}" width="100%"/>
+			<s:Button label="浏览" click="_dividePathHandler()"/>
+			<s:Button label="切" click="_divideHandler()"/>
+		</s:HGroup>
+	</s:Group>
+</s:TitleWindow>

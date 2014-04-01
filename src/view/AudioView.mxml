@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" title="声音操作" close="_close()"
+			   xmlns:s="library://ns.adobe.com/flex/spark" fontFamily="微软雅黑" fontSize="14"
+			   xmlns:mx="library://ns.adobe.com/flex/mx" width="340" height="400">
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.serialization.json.JSON;
+			
+			import controller.utils.XTools;
+			
+			import model.Data;
+			import model.vo.AudioDataVO;
+			
+			import mx.controls.Alert;
+			
+			private function _close():void{
+				this.visible = false;
+			}
+			private function _setAudio():void{
+				Data.currentAudioDataVO.audioType = int(audioTypeTxt.text);
+				Data.currentAudioDataVO.audioSN = int(audioSNTxt.text);
+				
+				var len:int = Data.audioAC.length;
+				for(var i:int=0;i<len;i++){
+					var vo:AudioDataVO = new AudioDataVO();
+					vo = Data.audioAC.getItemAt(i) as AudioDataVO;
+					if(Data.currentAudioDataVO.audioID == vo.audioID){
+						(Data.audioAC.getItemAt(i) as AudioDataVO).audioType = Data.currentAudioDataVO.audioType;
+						(Data.audioAC.getItemAt(i) as AudioDataVO).audioSN = Data.currentAudioDataVO.audioSN;
+						break;
+					}
+				}
+			}
+			private function _addAudio():void{
+				var vo:AudioDataVO = new AudioDataVO();
+				vo.audioID = XTools.getInstance().getUniquelyId();
+				vo.audioType = int(audioTypeTxt.text);
+				vo.audioSN = int(audioSNTxt.text);
+				Data.audioAC.addItem(vo);
+			}
+			private function _importAudio():void{
+				var fileToOpen:File = new File();
+				fileToOpen = File.applicationDirectory;
+				var txtFilter:FileFilter = new FileFilter("声音文件", "*.txt;*.json");
+				try 
+				{
+					fileToOpen.browseForOpen("Load AudioPath", [txtFilter]);
+					fileToOpen.addEventListener(Event.SELECT, _fileSelected);
+				}catch (error:Error){
+					trace("Failed:", error.message);
+				}
+			}
+			private function _fileSelected(event:Event):void 
+			{
+				Data.audioAC.removeAll();
+				var stream:FileStream = new FileStream();
+				var pathFile:File = event.target as File;
+				stream.open(pathFile, FileMode.READ);
+				var fileData:String = stream.readMultiByte(stream.bytesAvailable,"GBK");
+				var l_data:Object = com.adobe.serialization.json.JSON.decode(fileData);
+				var dataArr:Array = l_data.audio as Array;
+				var len:int = dataArr.length;
+				for(var i:int = 0;i<len;i++){
+					var o:Object = dataArr[i];
+					var audioDataVO:AudioDataVO = new AudioDataVO();
+					audioDataVO.audioType = o.audioType;
+					audioDataVO.audioSN = o.audioSN;
+					
+					audioDataVO.audioID = XTools.getInstance().getUniquelyId();
+					audioDataVO.removeFlag = false;
+					Data.audioAC.addItem(audioDataVO);
+				}
+			}
+			private function _exportAudio():void{
+				if(Data.audioAC.length == 0){
+					Alert.show("没有要导出的声音数据",Data.INFO_TITLE);
+					return;
+				}
+				var filesDir:File = new File();
+				filesDir = File.applicationDirectory;
+				try
+				{
+					filesDir.browseForSave("保存声音信息");
+					filesDir.addEventListener(Event.SELECT, _saveData);
+				}catch (error:Error){
+					trace("操作失败:", error.message);
+				}
+			}
+			private function _saveData(event:Event):void 
+			{
+				var newFile:File = event.target as File;
+				var audioStr:String="";
+				audioStr += '{';
+				audioStr += '"'+'audio'+'":[';
+				var len:int = Data.audioAC.length;
+				for(var i:int=0;i<len;i++){
+					var vo:AudioDataVO = new AudioDataVO();
+					vo = Data.audioAC.getItemAt(i) as AudioDataVO;
+					audioStr += '{';
+					audioStr += '"'+'audioType'+'":'+vo.audioType+',';
+					audioStr += '"'+'audioSN'+'":'+vo.audioSN;
+					audioStr += '},';
+				}
+				audioStr = audioStr.substring(0,audioStr.length-1);
+				audioStr += ']}';
+				
+				var stream:FileStream = new FileStream();
+				//write模式存在就替换
+				stream.open(newFile, FileMode.WRITE);
+				
+				stream.writeUTFBytes(audioStr);
+				stream.close();
+			}
+			private function _removeAudio():void{
+				var len:int = Data.audioAC.length;
+				for(var i:int=0;i<len;i++){
+					var vo:AudioDataVO = new AudioDataVO();
+					vo = Data.audioAC.getItemAt(i) as AudioDataVO;
+					if(vo.removeFlag){
+						Data.audioAC.removeItemAt(i);
+						len = Data.audioAC.length;
+						i--;
+					}
+				}
+				selAllChk.selected = false;
+			}
+			private function _selectedAllHandler():void{
+				var len:int = Data.audioAC.length;
+				for(var i:int=0;i<len;i++){
+					(Data.audioAC.getItemAt(i) as AudioDataVO).removeFlag = selAllChk.selected;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:VGroup left="10" right="10" top="10" bottom="10">
+		<s:HGroup verticalAlign="middle">
+			<s:Label text="类型："/>
+			<s:TextInput id="audioTypeTxt" text="{Data.currentAudioDataVO.audioType}" restrict="0-9" width="110"/>
+			<s:Label text="编号："/>
+			<s:TextInput id="audioSNTxt" text="{Data.currentAudioDataVO.audioSN}" restrict="0-9" width="110"/>
+		</s:HGroup>
+		<s:HGroup width="100%" verticalAlign="middle" horizontalAlign="right">
+			<s:Button label="保存设置" click="_setAudio()"/>
+			<s:Button label="添加" click="_addAudio()"/>
+		</s:HGroup>
+		<!-- 分隔符 -->
+		<s:Line xFrom="0" xTo="320" y="0" yTo="0">
+			<s:stroke>
+				<s:SolidColorStroke color="0x000000" weight="1" caps="square"/>
+			</s:stroke>
+		</s:Line>
+		<s:HGroup width="100%" verticalAlign="middle" horizontalAlign="right">
+			<s:Button label="导入" click="_importAudio()"/>
+			<s:Button label="导出" click="_exportAudio()"/>
+			<s:Button label="删除" click="_removeAudio()"/>
+			<s:CheckBox label="全选" id="selAllChk" click="_selectedAllHandler()" enabled="{Data.audioAC.length &gt; 0}"/>
+		</s:HGroup>
+		<s:List dataProvider="{Data.audioAC}" itemRenderer="view.AudioItemRenderer" width="100%" height="100%"/>
+	</s:VGroup>
+	
+</s:TitleWindow>
