@@ -34,6 +34,9 @@
 			private function _close():void{
 				this.visible = false;
 			}
+			private function penetrateChkHandler():void{
+				Data.isPenetrate = penetrateChk.selected;
+			}
 			private function portalChkHandler():void{
 				Data.currentItemInMap.itemDataVO.isNpc = false;
 				Data.currentItemInMap.itemDataVO.isPortal = portalChk.selected;
@@ -304,10 +307,11 @@
 			</s:Line> 
 		</s:VGroup>
 		<s:HGroup width="100%" verticalAlign="middle" horizontalAlign="right">
-			<s:CheckBox id="npcChk" label="设为NPC" click="npcChkHandler()"
+			<s:CheckBox id="npcChk" label="NPC" click="npcChkHandler()"
 						enabled="{Data.currentItemInMap != null}" selected="{Data.currentItemInMap.itemDataVO.isNpc}"/>
-			<s:CheckBox id="portalChk" label="设为传送门" click="portalChkHandler()"
+			<s:CheckBox id="portalChk" label="传送门" click="portalChkHandler()"
 						enabled="{Data.currentItemInMap != null}" selected="{Data.currentItemInMap.itemDataVO.isPortal}"/>
+			<s:CheckBox id="penetrateChk" label="穿透" click="penetrateChkHandler()" enabled="{Data.currentItemInMap != null}"/>
 			<s:Image width="30" height="30" source="{Data.ITEM_UP_URL}" 
 					 smooth="true" buttonMode="true" click="_changeLayerIndex(Msg.LAYER_UP)"/>
 			<s:Image width="30" height="30" source="{Data.ITEM_DOWN_URL}" 

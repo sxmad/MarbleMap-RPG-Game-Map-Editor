@@ -10,9 +10,9 @@
 	
 	<s:Group id="mapGroup" dragEnter="_onItemDragEnter(event)" dragDrop="_onItemDrop(event)" clipAndEnableScrolling="true">
 		<s:SpriteVisualElement id="bg"/>
-		<s:Group id="itemGroup" width="{Data.mapDataVO.mapW}" height="{Data.mapDataVO.mapH}"/>
 		<s:SpriteVisualElement id="gridContainer" visible="{showGridCheckBox.selected}"/>
 		<view:DivideGridView id="divideGridView" visible="{Data.dividePreViewFlag }"/>
+		<s:Group id="itemGroup" width="{Data.mapDataVO.mapW}" height="{Data.mapDataVO.mapH}" mouseChildren="{!Data.isPenetrate}" mouseEnabled="{!Data.isPenetrate}"/>
 	</s:Group>
 	
 	<view:NewMapView id="newMapView" visible="false"/>

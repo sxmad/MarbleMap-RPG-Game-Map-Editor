@@ -360,6 +360,16 @@ private function _onItemDrop(e:DragEvent):void{
 	var vo:ItemDataVO = e.dragSource.dataForFormat(Data.ITEM_FORMAT) as ItemDataVO;
 	_itemInMap = new ItemInMap();
 	_itemInMap.itemDataVO = new ItemDataVO();
+	var tempItemType:int = 0;
+	var tempItemSN:int = 0;
+	if(addItemView.itemTypeTxt.text.length != 0){
+		tempItemType = int(addItemView.itemTypeTxt.text);
+	}
+	if(addItemView.itemSNTxt.text.length != 0){
+		tempItemSN = int(addItemView.itemSNTxt.text);
+	}
+	_itemInMap.itemDataVO.itemType = tempItemType;
+	_itemInMap.itemDataVO.itemSN = tempItemSN;
 	_itemInMap.itemDataVO.itemFileName = vo.itemFileName;
 	_itemInMap.itemDataVO.itemFilePath = vo.itemFilePath;
 	itemGroup.addElement(_itemInMap);

@@ -92,6 +92,10 @@ package model
 		 * 删除物品标识 
 		 */		
 		public static var removeItemFlag:Boolean = false;
+		/**
+		 * 设置物品是否可穿透
+		 */		
+		public static var isPenetrate:Boolean = false;
 //		/**
 //		 * 是否是传送门 
 //		 */		
